@@ -720,6 +720,8 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
   const month = date.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
   const [newHabit, setNewHabit] = useState('');
+  const monthLabel = `${MONTH_NAMES[month]} ${year}`;
+  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
 
   const toggleHabit = (habitId, day) => {
     const dateKey = `${year}-${month}-${day}`;
@@ -736,8 +738,9 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
 
   const addHabit = (e) => {
     e.preventDefault();
-    if (!newHabit) return;
-    setHabits([...habits, { id: Date.now(), name: newHabit, history: {} }]);
+    const habitName = newHabit.trim();
+    if (!habitName) return;
+    setHabits([...habits, { id: Date.now(), name: habitName, history: {} }]);
     setNewHabit('');
   };
   
@@ -762,106 +765,164 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
 
   return (
     <div className="space-y-6 animate-fade-in font-sans pb-24 md:pb-0">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-[#EFE1E1]">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center bg-white p-4 md:p-5 rounded-2xl border border-[#EFE1E1] shadow-sm">
+        <div className="space-y-1">
            <h2 className={`${THEME.header} text-2xl font-bold`}>Pelacak Kebiasaan</h2>
            <p className="text-slate-400 text-xs tracking-widest uppercase">Bangun Konsistensi</p>
         </div>
-        
-        {/* Actions - Hidden on mobile, moved to bottom maybe? or keep simple */}
+
+        <div className="flex md:hidden items-center justify-between rounded-xl bg-[#FAF5F5] border border-[#EFE1E1] px-3 py-2">
+           <button onClick={() => setDate(new Date(year, month - 1))} className="p-1.5 text-slate-500 hover:text-[#B07070] hover:bg-white rounded-lg transition-colors">
+             <ChevronLeft className="w-5 h-5" />
+           </button>
+           <span className="text-sm font-bold text-slate-700">{monthLabel}</span>
+           <button onClick={() => setDate(new Date(year, month + 1))} className="p-1.5 text-slate-500 hover:text-[#B07070] hover:bg-white rounded-lg transition-colors">
+             <ChevronRight className="w-5 h-5" />
+           </button>
+        </div>
+
         <div className="hidden md:flex items-center gap-4">
-           <Button size="sm" variant="secondary" onClick={applyProductiveRoutine}>
+           <Button size="sm" variant="secondary" onClick={applyProductiveRoutine} className="h-10 px-4">
               <Sparkles className="w-4 h-4 text-yellow-500 mr-2"/>
               Isi Rutinitas Produktif
            </Button>
            <div className="flex items-center gap-2">
               <button onClick={() => setDate(new Date(year, month - 1))} className="p-2 hover:bg-[#F9E8E8] rounded-full transition-colors"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
-              <span className="text-xl font-light text-slate-700 min-w-[150px] text-center">{MONTH_NAMES[month]} {year}</span>
+              <span className="text-xl font-light text-slate-700 min-w-[170px] text-center">{monthLabel}</span>
               <button onClick={() => setDate(new Date(year, month + 1))} className="p-2 hover:bg-[#F9E8E8] rounded-full transition-colors"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
            </div>
         </div>
-        
-        {/* Mobile Month Nav */}
-        <div className="flex md:hidden items-center gap-1">
-           <button onClick={() => setDate(new Date(year, month - 1))}><ChevronLeft className="w-5 h-5" /></button>
-           <span className="text-sm font-bold">{MONTH_NAMES[month]}</span>
-           <button onClick={() => setDate(new Date(year, month + 1))}><ChevronRight className="w-5 h-5" /></button>
-        </div>
       </div>
-      
-      {/* Mobile Action Button */}
+
       <div className="md:hidden">
-        <Button size="sm" variant="secondary" onClick={applyProductiveRoutine} className="w-full mb-4">
+        <Button size="sm" variant="secondary" onClick={applyProductiveRoutine} className="w-full h-11">
           <Sparkles className="w-4 h-4 text-yellow-500 mr-2"/> Template Produktif
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-[#EFE1E1] overflow-x-auto">
-        <div className="min-w-[900px]">
-          <div className="flex border-b border-[#EFE1E1] bg-[#FAF5F5]">
-            <div className="w-64 flex-shrink-0 p-3 text-xs font-bold text-[#B07070] tracking-widest border-r border-[#EFE1E1]">KEBIASAAN</div>
-            <div className="flex-1 flex">
-              {Array.from({ length: daysInMonth }, (_, i) => (
-                <div key={i} className="flex-1 min-w-[24px] text-center p-3 text-[10px] text-slate-500 border-r border-slate-100 font-medium">{i + 1}</div>
-              ))}
+      <div className="bg-white rounded-2xl shadow-sm border border-[#EFE1E1] overflow-hidden">
+        <div className="md:hidden p-4 space-y-4 bg-[#FCFCFC]">
+          {habits.length === 0 && (
+            <div className="rounded-xl border border-dashed border-[#E8C5C5] bg-white p-6 text-center text-sm text-slate-400">
+              Belum ada kebiasaan. Tambahkan kebiasaan pertamamu di bawah.
             </div>
-            <div className="w-32 flex-shrink-0 p-3 text-center text-xs font-bold text-[#B07070] tracking-widest border-l border-[#EFE1E1]">KEMAJUAN</div>
-          </div>
-
-          {habits.map(habit => {
+          )}
+          {habits.map((habit, index) => {
             const stats = getStats(habit);
             return (
-              <div key={habit.id} className="flex border-b border-slate-50 group hover:bg-[#FFFBFB] transition-colors">
-                <div className="w-64 flex-shrink-0 p-3 text-sm font-medium text-slate-700 border-r border-[#EFE1E1] flex justify-between items-center bg-white sticky left-0 z-10">
-                  {habit.name}
-                  <button onClick={() => setHabits(habits.filter(h => h.id !== habit.id))} className="text-slate-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Trash2 className="w-3 h-3" />
+              <div
+                key={habit.id}
+                className="rounded-2xl border border-[#EFE1E1] bg-white p-4 shadow-sm animate-fade-in"
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-slate-700 leading-snug">{habit.name}</h3>
+                  <button onClick={() => setHabits(habits.filter(h => h.id !== habit.id))} className="p-2 text-slate-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="flex-1 flex">
-                  {Array.from({ length: daysInMonth }, (_, i) => {
-                    const day = i + 1;
-                    const checked = habit.history[`${year}-${month}-${day}`];
+                <div className="mt-3 mb-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Kemajuan</span>
+                    <span className="text-xs font-bold text-slate-600">{stats.count}/{daysInMonth} hari</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-full bg-[#E8C5C5] transition-all duration-500" style={{ width: `${stats.pct}%` }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {days.map(day => {
+                    const checked = !!habit.history[`${year}-${month}-${day}`];
                     return (
-                      <div key={day} className="flex-1 min-w-[24px] border-r border-slate-50 flex items-center justify-center relative">
-                        <label className="cursor-pointer w-full h-full flex items-center justify-center hover:bg-[#F9E8E8] transition-colors">
-                          <input 
-                            type="checkbox" 
-                            className="hidden"
-                            checked={!!checked}
-                            onChange={() => toggleHabit(habit.id, day)}
-                          />
-                          <div className={`w-3 h-3 rounded-sm transition-all duration-200 ${checked ? 'bg-[#98BEAC] scale-100' : 'bg-slate-100 scale-75'}`} />
-                        </label>
-                      </div>
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleHabit(habit.id, day)}
+                        className={`h-10 rounded-lg border text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
+                          checked
+                            ? 'bg-[#98BEAC] border-[#98BEAC] text-white shadow-sm animate-pop'
+                            : 'bg-white border-[#E9E9E9] text-slate-500 hover:border-[#D4A5A5] hover:text-[#B07070]'
+                        }`}
+                        aria-label={`Tandai ${habit.name} hari ${day}`}
+                      >
+                        {day}
+                      </button>
                     );
                   })}
-                </div>
-                <div className="w-32 flex-shrink-0 p-3 border-l border-[#EFE1E1] flex items-center gap-2">
-                   <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#E8C5C5]" style={{ width: `${stats.pct}%` }} />
-                   </div>
-                   <span className="text-[10px] font-bold text-slate-500 w-8">{stats.pct}%</span>
                 </div>
               </div>
             );
           })}
-          
-          {/* Add Row */}
-          <div className="p-3 border-t border-[#EFE1E1] bg-[#FCFCFC]">
-            <form onSubmit={addHabit} className="flex gap-2 max-w-sm">
-              <input 
-                type="text" 
-                value={newHabit}
-                onChange={e => setNewHabit(e.target.value)}
-                placeholder="+ Tambah kebiasaan baru" 
-                className="text-xs p-2 border border-[#EFE1E1] rounded w-full focus:outline-none focus:border-[#D4A5A5] bg-white"
-              />
-              <Button type="submit" size="sm" className="shrink-0">
-                <Plus className="w-3 h-3" /> Tambah
-              </Button>
-            </form>
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+          <div className="min-w-[1180px]">
+            <div className="flex border-b border-[#EFE1E1] bg-[#FAF5F5]">
+              <div className="w-72 flex-shrink-0 p-4 text-xs font-bold text-[#B07070] tracking-widest border-r border-[#EFE1E1]">KEBIASAAN</div>
+              <div className="flex-1 flex">
+                {days.map(day => (
+                  <div key={day} className="flex-1 min-w-[36px] text-center p-3 text-[11px] text-slate-500 border-r border-slate-100 font-semibold">{day}</div>
+                ))}
+              </div>
+              <div className="w-36 flex-shrink-0 p-4 text-center text-xs font-bold text-[#B07070] tracking-widest border-l border-[#EFE1E1]">KEMAJUAN</div>
+            </div>
+
+            {habits.map((habit, index) => {
+              const stats = getStats(habit);
+              return (
+                <div key={habit.id} className="flex border-b border-slate-100 group hover:bg-[#FFFBFB] transition-colors animate-fade-in" style={{ animationDelay: `${index * 25}ms` }}>
+                  <div className="w-72 flex-shrink-0 p-4 text-sm font-medium text-slate-700 border-r border-[#EFE1E1] flex justify-between items-center bg-white sticky left-0 z-10">
+                    <span>{habit.name}</span>
+                    <button onClick={() => setHabits(habits.filter(h => h.id !== habit.id))} className="p-2 text-slate-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 flex">
+                    {days.map(day => {
+                      const checked = !!habit.history[`${year}-${month}-${day}`];
+                      return (
+                        <div key={day} className="flex-1 min-w-[36px] border-r border-slate-100 p-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleHabit(habit.id, day)}
+                            className={`w-full h-9 rounded-md border transition-all duration-200 ${
+                              checked
+                                ? 'bg-[#98BEAC] border-[#98BEAC] text-white shadow-sm animate-pop'
+                                : 'bg-white border-[#E9E9E9] hover:border-[#D4A5A5]'
+                            }`}
+                            aria-label={`Tandai ${habit.name} hari ${day}`}
+                          >
+                            {checked ? <Check className="w-4 h-4 mx-auto" /> : <span className="text-[11px] text-slate-400">{day}</span>}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="w-36 flex-shrink-0 p-4 border-l border-[#EFE1E1] flex items-center gap-3">
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#E8C5C5] transition-all duration-500" style={{ width: `${stats.pct}%` }} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 w-9 text-right">{stats.pct}%</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        </div>
+
+        <div className="p-4 border-t border-[#EFE1E1] bg-[#FCFCFC]">
+          <form onSubmit={addHabit} className="flex flex-col md:flex-row gap-2 md:max-w-lg">
+            <input 
+              type="text" 
+              value={newHabit}
+              onChange={e => setNewHabit(e.target.value)}
+              placeholder="+ Tambah kebiasaan baru" 
+              className="text-sm p-3 border border-[#EFE1E1] rounded-lg w-full focus:outline-none focus:border-[#D4A5A5] bg-white"
+            />
+            <Button type="submit" className="shrink-0 h-11 px-5">
+              <Plus className="w-4 h-4" /> Tambah
+            </Button>
+          </form>
         </div>
       </div>
     </div>
