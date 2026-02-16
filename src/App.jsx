@@ -857,6 +857,9 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
                 placeholder="+ Tambah kebiasaan baru" 
                 className="text-xs p-2 border border-[#EFE1E1] rounded w-full focus:outline-none focus:border-[#D4A5A5] bg-white"
               />
+              <Button type="submit" size="sm" className="shrink-0">
+                <Plus className="w-3 h-3" /> Tambah
+              </Button>
             </form>
           </div>
         </div>
