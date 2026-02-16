@@ -83,6 +83,17 @@ const PRODUCTIVE_HABITS_TEMPLATE = [
   { name: 'Target 8 Gelas Air' }
 ];
 
+const FASTING_HABITS_TEMPLATE = [
+  { name: '03:45 Sahur Sehat & Air Putih' },
+  { name: '04:30 Subuh & Tilawah' },
+  { name: '12:00 Dzikir / Istirahat Singkat' },
+  { name: '15:30 Cek Energi & Fokus Tugas Ringan' },
+  { name: '17:45 Persiapan Berbuka' },
+  { name: '18:00 Berbuka Secukupnya' },
+  { name: '19:15 Isya & Tarawih / Ibadah Malam' },
+  { name: '22:00 Tidur Lebih Awal' }
+];
+
 // --- THEME CONSTANTS ---
 const THEME = {
   bg: "bg-[#FDF8F5]", 
@@ -714,18 +725,22 @@ const ContentPlanner = ({
 };
 
 // --- MODULE: HABIT TRACKER (GRID STYLE) ---
-const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
+const HabitTracker = ({ habits, setHabits, fastingHabits, setFastingHabits, setNotification }) => {
   const [date, setDate] = useState(new Date());
+  const [routineMode, setRoutineMode] = useState('daily');
   const year = date.getFullYear();
   const month = date.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
   const [newHabit, setNewHabit] = useState('');
   const monthLabel = `${MONTH_NAMES[month]} ${year}`;
   const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
+  const isFastingMode = routineMode === 'fasting';
+  const activeHabits = isFastingMode ? fastingHabits : habits;
+  const setActiveHabits = isFastingMode ? setFastingHabits : setHabits;
 
   const toggleHabit = (habitId, day) => {
     const dateKey = `${year}-${month}-${day}`;
-    setHabits(habits.map(h => {
+    setActiveHabits(activeHabits.map(h => {
       if (h.id === habitId) {
         const newHistory = { ...h.history };
         if (newHistory[dateKey]) delete newHistory[dateKey];
@@ -740,7 +755,7 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
     e.preventDefault();
     const habitName = newHabit.trim();
     if (!habitName) return;
-    setHabits([...habits, { id: Date.now(), name: habitName, history: {} }]);
+    setActiveHabits([...activeHabits, { id: Date.now(), name: habitName, history: {} }]);
     setNewHabit('');
   };
   
@@ -752,6 +767,28 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
     }));
     setHabits(newHabits);
     setNotification("Rutinitas produktif berhasil diterapkan!");
+  };
+
+  const applyFastingRoutine = () => {
+    const newHabits = FASTING_HABITS_TEMPLATE.map((h, i) => ({
+      id: Date.now() + i,
+      name: h.name,
+      history: {}
+    }));
+    setFastingHabits(newHabits);
+    setNotification("Rutinitas puasa berhasil diterapkan!");
+  };
+
+  const switchRoutineMode = (mode) => {
+    setRoutineMode(mode);
+    if (mode === 'fasting' && fastingHabits.length === 0) {
+      const defaultFastingHabits = FASTING_HABITS_TEMPLATE.map((h, i) => ({
+        id: Date.now() + i,
+        name: h.name,
+        history: {}
+      }));
+      setFastingHabits(defaultFastingHabits);
+    }
   };
 
   const getStats = (habit) => {
@@ -768,7 +805,24 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
       <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center bg-white p-4 md:p-5 rounded-2xl border border-[#EFE1E1] shadow-sm">
         <div className="space-y-1">
            <h2 className={`${THEME.header} text-2xl font-bold`}>Pelacak Kebiasaan</h2>
-           <p className="text-slate-400 text-xs tracking-widest uppercase">Bangun Konsistensi</p>
+           <p className="text-slate-400 text-xs tracking-widest uppercase">{isFastingMode ? 'Mode Puasa Aktif' : 'Bangun Konsistensi'}</p>
+        </div>
+
+        <div className="flex items-center rounded-xl bg-[#FAF5F5] border border-[#EFE1E1] p-1">
+          <button
+            type="button"
+            onClick={() => switchRoutineMode('daily')}
+            className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors ${!isFastingMode ? 'bg-white text-[#B07070] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Harian
+          </button>
+          <button
+            type="button"
+            onClick={() => switchRoutineMode('fasting')}
+            className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors ${isFastingMode ? 'bg-white text-[#B07070] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Puasa
+          </button>
         </div>
 
         <div className="flex md:hidden items-center justify-between rounded-xl bg-[#FAF5F5] border border-[#EFE1E1] px-3 py-2">
@@ -782,9 +836,9 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-           <Button size="sm" variant="secondary" onClick={applyProductiveRoutine} className="h-10 px-4">
+           <Button size="sm" variant="secondary" onClick={isFastingMode ? applyFastingRoutine : applyProductiveRoutine} className="h-10 px-4">
               <Sparkles className="w-4 h-4 text-yellow-500 mr-2"/>
-              Isi Rutinitas Produktif
+              {isFastingMode ? 'Isi Rutinitas Puasa' : 'Isi Rutinitas Produktif'}
            </Button>
            <div className="flex items-center gap-2">
               <button onClick={() => setDate(new Date(year, month - 1))} className="p-2 hover:bg-[#F9E8E8] rounded-full transition-colors"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
@@ -795,19 +849,19 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
       </div>
 
       <div className="md:hidden">
-        <Button size="sm" variant="secondary" onClick={applyProductiveRoutine} className="w-full h-11">
-          <Sparkles className="w-4 h-4 text-yellow-500 mr-2"/> Template Produktif
+        <Button size="sm" variant="secondary" onClick={isFastingMode ? applyFastingRoutine : applyProductiveRoutine} className="w-full h-11">
+          <Sparkles className="w-4 h-4 text-yellow-500 mr-2"/> {isFastingMode ? 'Template Puasa' : 'Template Produktif'}
         </Button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-[#EFE1E1] overflow-hidden">
         <div className="md:hidden p-4 space-y-4 bg-[#FCFCFC]">
-          {habits.length === 0 && (
+          {activeHabits.length === 0 && (
             <div className="rounded-xl border border-dashed border-[#E8C5C5] bg-white p-6 text-center text-sm text-slate-400">
               Belum ada kebiasaan. Tambahkan kebiasaan pertamamu di bawah.
             </div>
           )}
-          {habits.map((habit, index) => {
+          {activeHabits.map((habit, index) => {
             const stats = getStats(habit);
             return (
               <div
@@ -817,7 +871,7 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
               >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-sm font-semibold text-slate-700 leading-snug">{habit.name}</h3>
-                  <button onClick={() => setHabits(habits.filter(h => h.id !== habit.id))} className="p-2 text-slate-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={() => setActiveHabits(activeHabits.filter(h => h.id !== habit.id))} className="p-2 text-slate-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -867,13 +921,13 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
               <div className="w-36 flex-shrink-0 p-4 text-center text-xs font-bold text-[#B07070] tracking-widest border-l border-[#EFE1E1]">KEMAJUAN</div>
             </div>
 
-            {habits.map((habit, index) => {
+            {activeHabits.map((habit, index) => {
               const stats = getStats(habit);
               return (
                 <div key={habit.id} className="flex border-b border-slate-100 group hover:bg-[#FFFBFB] transition-colors animate-fade-in" style={{ animationDelay: `${index * 25}ms` }}>
                   <div className="w-72 flex-shrink-0 p-4 text-sm font-medium text-slate-700 border-r border-[#EFE1E1] flex justify-between items-center bg-white sticky left-0 z-10">
                     <span>{habit.name}</span>
-                    <button onClick={() => setHabits(habits.filter(h => h.id !== habit.id))} className="p-2 text-slate-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50">
+                    <button onClick={() => setActiveHabits(activeHabits.filter(h => h.id !== habit.id))} className="p-2 text-slate-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-50">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -916,7 +970,7 @@ const HabitTracker = ({ habits, setHabits, notification, setNotification }) => {
               type="text" 
               value={newHabit}
               onChange={e => setNewHabit(e.target.value)}
-              placeholder="+ Tambah kebiasaan baru" 
+              placeholder={isFastingMode ? '+ Tambah rutinitas puasa' : '+ Tambah kebiasaan baru'} 
               className="text-sm p-3 border border-[#EFE1E1] rounded-lg w-full focus:outline-none focus:border-[#D4A5A5] bg-white"
             />
             <Button type="submit" className="shrink-0 h-11 px-5">
@@ -1316,6 +1370,7 @@ const MainApp = () => {
 
   // Other modules state
   const [habits, setHabits] = useState(() => JSON.parse(localStorage.getItem('los_habits')) || [{ id: 1, name: 'Rutinitas Pagi', history: {} }]);
+  const [fastingHabits, setFastingHabits] = useState(() => JSON.parse(localStorage.getItem('los_fasting_habits')) || []);
   const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('los_finance')) || []);
   const [budgetPlan, setBudgetPlan] = useState(() => JSON.parse(localStorage.getItem('los_budget_plan')) || []);
   const [incomeGoal, setIncomeGoal] = useState(() => JSON.parse(localStorage.getItem('los_income_goal')) || 0);
@@ -1331,6 +1386,7 @@ const MainApp = () => {
   useEffect(() => localStorage.setItem('los_recurring', JSON.stringify(recurringItems)), [recurringItems]);
   useEffect(() => localStorage.setItem('los_completions', JSON.stringify(completions)), [completions]);
   useEffect(() => localStorage.setItem('los_habits', JSON.stringify(habits)), [habits]);
+  useEffect(() => localStorage.setItem('los_fasting_habits', JSON.stringify(fastingHabits)), [fastingHabits]);
   useEffect(() => localStorage.setItem('los_finance', JSON.stringify(transactions)), [transactions]);
   useEffect(() => localStorage.setItem('los_budget_plan', JSON.stringify(budgetPlan)), [budgetPlan]);
   useEffect(() => localStorage.setItem('los_income_goal', JSON.stringify(incomeGoal)), [incomeGoal]);
@@ -1392,7 +1448,7 @@ const MainApp = () => {
         <div className="max-w-6xl mx-auto">
            {activeTab === 'academic' && <Academic academicSchedule={academicSchedule} setAcademicSchedule={setAcademicSchedule} academicDetails={academicDetails} setAcademicDetails={setAcademicDetails} assignments={assignments} setAssignments={setAssignments} />}
            {activeTab === 'planner' && <ContentPlanner plannerItems={plannerItems} setPlannerItems={setPlannerItems} recurringItems={recurringItems} setRecurringItems={setRecurringItems} completions={completions} setCompletions={setCompletions} settings={settings} setSettings={setSettings} />}
-           {activeTab === 'habits' && <HabitTracker habits={habits} setHabits={setHabits} notification={notification} setNotification={setNotification} />}
+           {activeTab === 'habits' && <HabitTracker habits={habits} setHabits={setHabits} fastingHabits={fastingHabits} setFastingHabits={setFastingHabits} setNotification={setNotification} />}
            {activeTab === 'finance' && <Finance transactions={transactions} setTransactions={setTransactions} budgetPlan={budgetPlan} setBudgetPlan={setBudgetPlan} incomeGoal={incomeGoal} setIncomeGoal={setIncomeGoal} budgetMethod={budgetMethod} setBudgetMethod={setBudgetMethod} />}
            {activeTab === 'roadmap' && <Roadmap goals={goals} setGoals={setGoals} />}
         </div>
