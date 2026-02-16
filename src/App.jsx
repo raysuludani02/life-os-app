@@ -1296,7 +1296,7 @@ const MainApp = () => {
       <Toast message={notification} onClose={() => setNotification(null)} />
       {settings.showSetup && <SetupWizard settings={settings} setSettings={setSettings} />}
 
-      <aside className={`w-full md:w-64 ${THEME.sidebar} border-r border-[#EFE1E1] flex-shrink-0 flex flex-col h-auto md:h-screen sticky top-0 z-20`}>
+      <aside className={`hidden md:flex md:w-64 ${THEME.sidebar} border-r border-[#EFE1E1] flex-shrink-0 flex-col h-screen sticky top-0 z-20`}>
         <div className="p-8 border-b border-[#EFE1E1] text-center"><h1 className="font-serif text-3xl text-slate-800 tracking-tight">Life<span className="text-[#D4A5A5] italic">OS</span></h1><p className="text-[10px] text-slate-400 tracking-[0.2em] uppercase mt-2">Dasbor Pribadi</p></div>
         <nav className="flex-1 p-6 space-y-2">{navItems.map(item => (<button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex items-center gap-4 px-4 py-3 rounded-lg w-full transition-all duration-300 text-sm tracking-wide ${activeTab === item.id ? 'bg-[#F9E8E8] text-[#B07070] font-bold shadow-sm' : 'text-slate-500 hover:bg-[#FDF8F5] hover:text-slate-700'}`}><item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-[#B07070]' : 'text-slate-400'}`} /> {item.label}</button>))}</nav>
         <div className="p-6 border-t border-[#EFE1E1] space-y-3">
